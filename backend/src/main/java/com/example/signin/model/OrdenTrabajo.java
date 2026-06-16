@@ -29,6 +29,11 @@ public class OrdenTrabajo {
     @JsonIgnoreProperties({"cliente"})
     private Vehiculo vehiculo;
 
+    @ManyToOne
+    @JoinColumn(name = "mecanico_id")
+    @JsonIgnoreProperties({})
+    private Mecanico mecanico;
+
     @PrePersist
     protected void onCreate() {
         this.fechaIngreso = LocalDateTime.now();
@@ -68,6 +73,10 @@ public class OrdenTrabajo {
         return vehiculo;
     }
 
+    public Mecanico getMecanico() {
+        return mecanico;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -90,5 +99,9 @@ public class OrdenTrabajo {
 
     public void setVehiculo(Vehiculo vehiculo) {
         this.vehiculo = vehiculo;
+    }
+
+    public void setMecanico(Mecanico mecanico) {
+        this.mecanico = mecanico;
     }
 }

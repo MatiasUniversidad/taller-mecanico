@@ -24,17 +24,21 @@ public class OrdenTrabajoController {
     }
 
     @GetMapping("/{id}")
-    public OrdenTrabajo obtenerPorId(@PathVariable Long id) {
+    public OrdenTrabajo obtenerPorId(@PathVariable("id") Long id) {
         return ordenTrabajoService.obtenerPorId(id);
     }
 
     @GetMapping("/vehiculo/{vehiculoId}")
-    public List<OrdenTrabajo> obtenerPorVehiculo(@PathVariable Integer vehiculoId) {
+    public List<OrdenTrabajo> obtenerPorVehiculo(
+            @PathVariable("vehiculoId") Integer vehiculoId
+    ) {
         return ordenTrabajoService.obtenerPorVehiculo(vehiculoId);
     }
 
     @GetMapping("/estado/{estado}")
-    public List<OrdenTrabajo> obtenerPorEstado(@PathVariable String estado) {
+    public List<OrdenTrabajo> obtenerPorEstado(
+            @PathVariable("estado") String estado
+    ) {
         return ordenTrabajoService.obtenerPorEstado(estado);
     }
 
@@ -43,8 +47,16 @@ public class OrdenTrabajoController {
         return ordenTrabajoService.crearOrden(dto);
     }
 
+    @PutMapping("/{ordenId}/asignar-mecanico/{mecanicoId}")
+    public OrdenTrabajo asignarMecanico(
+            @PathVariable("ordenId") Long ordenId,
+            @PathVariable("mecanicoId") Integer mecanicoId
+    ) {
+        return ordenTrabajoService.asignarMecanico(ordenId, mecanicoId);
+    }
+
     @DeleteMapping("/{id}")
-    public void eliminar(@PathVariable Long id) {
+    public void eliminar(@PathVariable("id") Long id) {
         ordenTrabajoService.eliminar(id);
     }
 }
