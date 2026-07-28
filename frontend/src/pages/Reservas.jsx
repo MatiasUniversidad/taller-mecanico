@@ -13,6 +13,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import {
   getReservas,
   createReserva,
+  deleteReserva,
 } from '../api/reservas';
 
 import {
@@ -42,6 +43,7 @@ const EMPTY_FORM = {
 export default function Reservas() {
   const [reservas, setReservas] = useState([]);
   const [clientes, setClientes] = useState([]);
+
   const [
     vehiculosCliente,
     setVehiculosCliente,
@@ -84,6 +86,21 @@ export default function Reservas() {
     setShowCancelConfirm,
   ] = useState(false);
 
+  const [
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+  ] = useState(false);
+
+  const [
+    reservaEliminar,
+    setReservaEliminar,
+  ] = useState(null);
+
+  const [
+    deleteLoading,
+    setDeleteLoading,
+  ] = useState(false);
+
   const load = () => {
     setLoading(true);
     setError('');
@@ -92,10 +109,12 @@ export default function Reservas() {
       getReservas(),
       getClientes(),
     ])
-      .then(([reservasData, clientesData]) => {
-        setReservas(reservasData);
-        setClientes(clientesData);
-      })
+      .then(
+        ([reservasData, clientesData]) => {
+          setReservas(reservasData);
+          setClientes(clientesData);
+        }
+      )
       .catch((err) => {
         setError(
           err.message ||
@@ -111,8 +130,8 @@ export default function Reservas() {
     load();
   }, []);
 
-  const clientesFiltrados = clientes.filter(
-    (cliente) => {
+  const clientesFiltrados =
+    clientes.filter((cliente) => {
       const consulta = clienteSearch
         .trim()
         .toLowerCase();
@@ -130,9 +149,10 @@ export default function Reservas() {
         .join(' ')
         .toLowerCase();
 
-      return textoCliente.includes(consulta);
-    }
-  );
+      return textoCliente.includes(
+        consulta
+      );
+    });
 
   const vehiculosFiltrados =
     vehiculosCliente.filter((vehiculo) => {
@@ -158,7 +178,9 @@ export default function Reservas() {
         .join(' ')
         .toLowerCase();
 
-      return textoVehiculo.includes(consulta);
+      return textoVehiculo.includes(
+        consulta
+      );
     });
 
   const openModal = () => {
@@ -196,7 +218,10 @@ export default function Reservas() {
     const estadoFueModificado =
       form.estado !== 'PENDIENTE';
 
-    if (tieneDatos || estadoFueModificado) {
+    if (
+      tieneDatos ||
+      estadoFueModificado
+    ) {
       setShowCancelConfirm(true);
       return;
     }
@@ -225,11 +250,13 @@ export default function Reservas() {
     setVehiculoSearch('');
     setVehiculosCliente([]);
 
-    setFieldErrors((currentErrors) => ({
-      ...currentErrors,
-      clienteId: '',
-      vehiculoId: '',
-    }));
+    setFieldErrors(
+      (currentErrors) => ({
+        ...currentErrors,
+        clienteId: '',
+        vehiculoId: '',
+      })
+    );
 
     if (!clienteId) {
       return;
@@ -266,10 +293,12 @@ export default function Reservas() {
         [field]: value,
       }));
 
-      setFieldErrors((currentErrors) => ({
-        ...currentErrors,
-        [field]: '',
-      }));
+      setFieldErrors(
+        (currentErrors) => ({
+          ...currentErrors,
+          [field]: '',
+        })
+      );
 
       setFormError('');
     };
@@ -299,7 +328,9 @@ export default function Reservas() {
 
     setFieldErrors(errores);
 
-    return Object.keys(errores).length === 0;
+    return (
+      Object.keys(errores).length === 0
+    );
   };
 
   const handleSubmit = async (event) => {
@@ -323,7 +354,9 @@ export default function Reservas() {
         hora,
         motivo: form.motivo.trim(),
         estado: form.estado,
-        clienteId: Number(form.clienteId),
+        clienteId: Number(
+          form.clienteId
+        ),
         vehiculoId: Number(
           form.vehiculoId
         ),
@@ -354,6 +387,78 @@ export default function Reservas() {
     }
   };
 
+  const solicitarEliminar = (
+    reserva
+  ) => {
+    setReservaEliminar(reserva);
+    setShowDeleteConfirm(true);
+  };
+
+  const cancelarEliminar = () => {
+    if (deleteLoading) {
+      return;
+    }
+
+    setReservaEliminar(null);
+    setShowDeleteConfirm(false);
+  };
+
+  const confirmarEliminar = async () => {
+    if (!reservaEliminar) {
+      return;
+    }
+
+    setDeleteLoading(true);
+
+    try {
+      await deleteReserva(
+        reservaEliminar.id
+      );
+
+      await load();
+
+      setFeedback({
+        type: 'success',
+        message:
+          'Reserva eliminada correctamente.',
+      });
+
+      setReservaEliminar(null);
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        message:
+          err.message ||
+          'No fue posible eliminar la reserva.',
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const obtenerDescripcionReserva = () => {
+    if (!reservaEliminar) {
+      return '';
+    }
+
+    const cliente =
+      reservaEliminar.cliente?.nombre ??
+      'cliente sin nombre';
+
+    const fecha =
+      reservaEliminar.fecha ??
+      'fecha no disponible';
+
+    const hora =
+      reservaEliminar.hora?.slice(
+        0,
+        5
+      ) ?? 'hora no disponible';
+
+    return `¿Está seguro de que desea eliminar la reserva de ${cliente}, programada para el ${fecha} a las ${hora}? Esta acción no se puede deshacer.`;
+  };
+
   const columns = [
     {
       key: 'fecha',
@@ -363,13 +468,15 @@ export default function Reservas() {
       key: 'hora',
       header: 'Hora',
       render: (reserva) =>
-        reserva.hora?.slice(0, 5) ?? '—',
+        reserva.hora?.slice(0, 5) ??
+        '—',
     },
     {
       key: 'cliente',
       header: 'Cliente',
       render: (reserva) =>
-        reserva.cliente?.nombre ?? '—',
+        reserva.cliente?.nombre ??
+        '—',
     },
     {
       key: 'vehiculo',
@@ -389,7 +496,38 @@ export default function Reservas() {
       key: 'estado',
       header: 'Estado',
       render: (reserva) => (
-        <Badge status={reserva.estado} />
+        <Badge
+          status={reserva.estado}
+        />
+      ),
+    },
+    {
+      key: 'acciones',
+      header: 'Acciones',
+      render: (reserva) => (
+        <Button
+          type="button"
+          variant="danger"
+          onClick={() =>
+            solicitarEliminar(reserva)
+          }
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-9 0h12"
+            />
+          </svg>
+
+          Eliminar
+        </Button>
       ),
     },
   ];
@@ -504,7 +642,6 @@ export default function Reservas() {
             />
           </div>
 
-          {/* Buscar y seleccionar cliente */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-slate-700">
               Cliente{' '}
@@ -571,7 +708,6 @@ export default function Reservas() {
             )}
           </div>
 
-          {/* Buscar y seleccionar vehículo */}
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-slate-700">
               Vehículo{' '}
@@ -651,7 +787,8 @@ export default function Reservas() {
             {vehiculoSearch &&
               vehiculosFiltrados.length ===
                 0 &&
-              vehiculosCliente.length > 0 && (
+              vehiculosCliente.length >
+                0 && (
                 <p className="text-xs text-red-600">
                   No se encontraron vehículos
                   con esa búsqueda.
@@ -711,6 +848,21 @@ export default function Reservas() {
         variant="danger"
         onConfirm={confirmarCancelacion}
         onCancel={continuarEditando}
+      />
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Eliminar reserva"
+        message={obtenerDescripcionReserva()}
+        confirmText={
+          deleteLoading
+            ? 'Eliminando...'
+            : 'Eliminar'
+        }
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={confirmarEliminar}
+        onCancel={cancelarEliminar}
       />
     </Layout>
   );

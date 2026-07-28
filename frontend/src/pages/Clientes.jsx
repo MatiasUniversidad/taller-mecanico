@@ -357,24 +357,33 @@ export default function Clientes() {
     };
 
   const handleDelete = async () => {
-    if (!selected?.id) {
-      return;
-    }
+  if (!selected?.id) {
+    return;
+  }
 
-    setFormLoading(true);
-    setFormError('');
+  setFormLoading(true);
+  setFormError('');
 
-    try {
-      await deleteCliente(selected.id);
+  try {
+    await deleteCliente(selected.id);
 
-      load();
-      closeModal();
-    } catch (err) {
-      setFormError(err.message);
-    } finally {
-      setFormLoading(false);
-    }
-  };
+    await load();
+
+    closeModal();
+
+    setClientFeedback({
+      type: 'success',
+      message: 'Cliente eliminado correctamente.',
+    });
+  } catch (err) {
+    setFormError(
+      err.message ||
+        'No fue posible eliminar el cliente.'
+    );
+  } finally {
+    setFormLoading(false);
+  }
+};
 
   const handleVehFormChange =
     (field) => (event) => {
@@ -904,12 +913,14 @@ export default function Clientes() {
         )}
 
         <p className="text-slate-600 text-sm">
-          ¿Estás seguro de que deseas
-          eliminar al cliente{' '}
-          <strong>{selected?.nombre}</strong>?
-          Esta acción también eliminará sus
-          vehículos asociados.
-        </p>
+  ¿Está seguro de que desea eliminar al cliente{' '}
+  <strong>{selected?.nombre}</strong>?
+</p>
+
+<p className="mt-2 text-xs text-amber-600">
+  Si el cliente posee vehículos, reservas u órdenes
+  de trabajo asociadas, primero deberá eliminarlas.
+</p>
       </Modal>
 
       {/* Modal de vehículos */}
